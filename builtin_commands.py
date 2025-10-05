@@ -6,6 +6,7 @@ from datetime import datetime
 import curses
 from colors import *
 from display import clear_and_setup, show_ascii_art
+from gemini_client import ask_gemini
 
 def my_ls():
     try:
@@ -42,6 +43,7 @@ def my_help():
     print(f"{GREEN}  help      {RESET}- Show this help message")
     print(f"{GREEN}  ascii     {RESET}- Show cool ASCII art")
     print(f"{GREEN}  exit      {RESET}- Exit the shell")
+    print(f"{GREEN}  ai        {RESET}- Enter AI mode with Gemini 2.5 Flash")
     print(f"{YELLOW}  <command> {RESET}- Run any system command")
 
 def handle_builtin_commands(command_parts):
@@ -82,6 +84,27 @@ def handle_builtin_commands(command_parts):
         return True
     elif cmd == curses.KEY_PPAGE:
         print("hello")
+        return True
+    elif cmd == "ai":
+        # If user types 'ai' with no arguments, enter interactive AI mode
+        if len(command_parts) == 1:
+            print(f"{YELLOW}🤖 Entering AI mode. Type 'exit' to leave.{RESET}")
+            while True:
+                query = input(f"{CYAN}ai> {RESET}").strip()
+                if query.lower() in ["exit", "quit"]:
+                    print(f"{YELLOW}👋 Leaving AI mode.{RESET}")
+                    break
+                if not query:
+                    continue
+                print(f"{YELLOW}🤖 Thinking...{RESET}")
+                answer = ask_gemini(query)
+                print(f"{GREEN}{answer}{RESET}")
+        else:
+            # Single-shot query like 'ai explain python'
+            query = " ".join(command_parts[1:])
+            print(f"{YELLOW}🤖 Thinking...{RESET}")
+            answer = ask_gemini(query)
+            print(f"{GREEN}{answer}{RESET}")
         return True
     
     return False
