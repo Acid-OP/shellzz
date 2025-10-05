@@ -1,8 +1,7 @@
-# main.py
-from .display import clear_and_setup, get_colored_prompt
-from .builtin_commands import handle_builtin_commands
-from .external_commands import run_external_command
-from .colors import *
+from display import clear_and_setup, get_colored_prompt
+from builtin_commands import handle_builtin_commands
+from external_commands import run_external_command
+from colors import *
 
 def main():
     clear_and_setup()

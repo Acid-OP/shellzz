@@ -1,6 +1,6 @@
 # external_commands.py
 import subprocess
-from .colors import *
+from colors import *
 
 def run_external_command(command_parts):
     """Run external system commands"""

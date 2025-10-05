@@ -4,8 +4,8 @@ import getpass
 import socket
 from datetime import datetime
 import curses
-from .colors import *
-from .display import clear_and_setup, show_ascii_art
+from colors import *
+from display import clear_and_setup, show_ascii_art
 
 def my_ls():
     try:

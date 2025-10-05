@@ -3,7 +3,7 @@ import os
 import getpass
 import socket
 from datetime import datetime
-from .colors import *
+from colors import *
 
 def clear_and_setup():
     """Clear terminal and setup background"""
