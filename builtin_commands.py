@@ -1,12 +1,12 @@
-# builtin_commands.py
 import os
 import getpass
 import socket
 from datetime import datetime
 import curses
+import re
 from colors import *
 from display import clear_and_setup, show_ascii_art
-from gemini_client import ask_gemini
+from gemini_client import ask_gemini, ask_gemini_with_file_generation
 
 def my_ls():
     try:
@@ -44,6 +44,7 @@ def my_help():
     print(f"{GREEN}  ascii     {RESET}- Show cool ASCII art")
     print(f"{GREEN}  exit      {RESET}- Exit the shell")
     print(f"{GREEN}  ai        {RESET}- Enter AI mode with Gemini 2.5 Flash")
+    print(f"{GREEN}  ai gen    {RESET}- Enter AI mode with automatic file generation")
     print(f"{YELLOW}  <command> {RESET}- Run any system command")
 
 def handle_builtin_commands(command_parts):
@@ -82,13 +83,72 @@ def handle_builtin_commands(command_parts):
     elif cmd == "ascii":
         show_ascii_art()
         return True
-    elif cmd == curses.KEY_PPAGE:
-        print("hello")
-        return True
     elif cmd == "ai":
-        # If user types 'ai' with no arguments, enter interactive AI mode
-        if len(command_parts) == 1:
+        if len(command_parts) > 1 and command_parts[1].lower() == "gen":
+            print(f"{YELLOW}🤖 Entering AI Gen Mode (with file generation).{RESET}")
+            print(f"{CYAN}💡 Tip: Ask me to 'create a Flask app' or 'build a React component'{RESET}")
+            print(f"{GREEN}📍 Current directory: {os.getcwd()}{RESET}")
+            print(f"{YELLOW}Type 'exit' to leave.{RESET}\n")
+            
+            while True:
+                query = input(f"{MAGENTA}ai-gen> {RESET}").strip()
+                if query.lower() in ["exit", "quit"]:
+                    print(f"{YELLOW}👋 Leaving AI Gen mode.{RESET}")
+                    break
+                if not query:
+                    continue
+                
+                print(f"{YELLOW}🤖 Thinking and generating...{RESET}\n")
+                
+                print(f"{CYAN}📁 Where should I create the files?{RESET}")
+                print(f"{YELLOW}   Examples:{RESET}")
+                print(f"{YELLOW}   - Press Enter (current directory){RESET}")
+                print(f"{YELLOW}   - my_project (creates folder in current dir){RESET}")
+                print(f"{YELLOW}   - ~/Desktop/my_app (absolute path){RESET}")
+                print(f"{YELLOW}   - ../parent_folder/project (relative path){RESET}")
+                project_dir = input(f"{CYAN}   Path: {RESET}").strip()
+                
+                if not project_dir:
+                    project_dir = "."
+                    print(f"{GREEN}   ✓ Using current directory: {os.getcwd()}{RESET}")
+                else:
+                    project_dir = os.path.expanduser(project_dir)
+      
+                    if not os.path.isabs(project_dir):
+                        abs_path = os.path.abspath(project_dir)
+                        print(f"{GREEN}   ✓ Will create in: {abs_path}{RESET}")
+                    else:
+                        print(f"{GREEN}   ✓ Will create in: {project_dir}{RESET}")
+    
+                    if not os.path.exists(project_dir):
+                        confirm = input(f"{YELLOW}   Directory doesn't exist. Create it? (Y/n): {RESET}").strip().lower()
+                        if confirm and confirm != 'y' and confirm != '':
+                            print(f"{RED}   ✗ Cancelled{RESET}\n")
+                            continue
+                        try:
+                            os.makedirs(project_dir, exist_ok=True)
+                            print(f"{GREEN}   ✓ Created directory{RESET}")
+                        except Exception as e:
+                            print(f"{RED}   ✗ Failed to create directory: {e}{RESET}\n")
+                            continue
+                
+                print() 
+                response, files_generated = ask_gemini_with_file_generation(query, project_dir)
+                
+                clean_response = re.sub(r'<file path="[^"]+">.*?</file>', '', response, flags=re.DOTALL)
+                clean_response = re.sub(r'<command>.*?</command>', '', clean_response, flags=re.DOTALL)
+                clean_response = clean_response.strip()
+                
+                if clean_response:
+                    print(f"\n{GREEN}{clean_response}{RESET}\n")
+                
+                if not files_generated and '<file' not in response:
+                    print(f"{YELLOW}💡 Tip: Ask me to create or generate files!{RESET}\n")
+        
+        elif len(command_parts) == 1:
             print(f"{YELLOW}🤖 Entering AI mode. Type 'exit' to leave.{RESET}")
+            print(f"{CYAN}💡 Use 'ai gen' for file generation mode{RESET}\n")
+            
             while True:
                 query = input(f"{CYAN}ai> {RESET}").strip()
                 if query.lower() in ["exit", "quit"]:
@@ -98,13 +158,13 @@ def handle_builtin_commands(command_parts):
                     continue
                 print(f"{YELLOW}🤖 Thinking...{RESET}")
                 answer = ask_gemini(query)
-                print(f"{GREEN}{answer}{RESET}")
+                print(f"{GREEN}{answer}{RESET}\n")
         else:
-            # Single-shot query like 'ai explain python'
             query = " ".join(command_parts[1:])
             print(f"{YELLOW}🤖 Thinking...{RESET}")
             answer = ask_gemini(query)
             print(f"{GREEN}{answer}{RESET}")
+        
         return True
     
     return False

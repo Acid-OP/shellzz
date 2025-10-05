@@ -4,7 +4,16 @@ WORKDIR /app
 
 COPY . /app
 
-RUN pip install --no-cache-dir grpcio==1.60.1 google-generativeai python-dotenv
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+
+RUN pip install --no-cache-dir \
+    grpcio==1.60.1 \
+    google-generativeai \
+    python-dotenv
 
 ENV PYTHONUNBUFFERED=1
 
